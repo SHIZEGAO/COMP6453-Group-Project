@@ -1,9 +1,11 @@
 """
-FORS (Forest of Random Subsets) module for SPHINCS+.
+FORSCached – optimised FORS with precomputed authentication path cache.
 
-FORS is a few-time signature scheme used as the "message compression"
-layer inside SPHINCS+.  It signs a message by selecting one secret value
-from each of k independent Merkle trees; each tree has t = 2^a leaves.
+During key generation every authentication path for every leaf in every
+tree is computed and stored.  Signing then becomes a direct cache lookup
+(O(k) dictionary reads) instead of a tree traversal.
+
+Trade-off: higher memory usage and slower keygen; faster signing.
 
 Author: Kaiqi Shi (z5622283)
 """
@@ -18,9 +20,9 @@ def H(data: bytes) -> bytes:
     return hashlib.sha256(data).digest()
 
 
-class FORS:
+class FORSCached:
     """
-    Baseline FORS implementation.
+    FORS with precomputed authentication path cache.
 
     Parameters
     ----------
@@ -39,18 +41,14 @@ class FORS:
 
     def keygen(self) -> tuple:
         """
-        Generate a FORS key pair.
+        Generate a FORS key pair with a full authentication path cache.
 
-        For each of the k trees:
-          - sample t random 32-byte secret values,
-          - hash each value to obtain the leaves,
-          - build a Merkle tree.
-
-        The public key is H(root_0 || root_1 || … || root_{k-1}).
+        In addition to the standard keygen output this method precomputes
+        auth_path_cache[i][j] for every tree i and leaf j.
 
         Returns
         -------
-        private_key : dict  – keys: 'sk', 'trees', 'roots'
+        private_key : dict  – keys: 'sk', 'trees', 'roots', 'auth_path_cache'
         pk          : bytes – 32-byte compressed public key
         """
         sk = [
@@ -58,28 +56,34 @@ class FORS:
             for _ in range(self.k)
         ]
 
-        trees, roots = [], []
+        trees, roots, auth_path_cache = [], [], []
         for i in range(self.k):
             leaves = [H(sk[i][j]) for j in range(self.t)]
             tree   = MerkleTree()
             tree.build(leaves)
             trees.append(tree)
             roots.append(tree.root())
+            auth_path_cache.append([tree.auth_path(j) for j in range(self.t)])
 
         pk = H(b''.join(roots))
-        private_key = {"sk": sk, "trees": trees, "roots": roots}
+        private_key = {
+            "sk": sk,
+            "trees": trees,
+            "roots": roots,
+            "auth_path_cache": auth_path_cache,
+        }
         return private_key, pk
 
     # ------------------------------------------------------------------
-    # Index derivation
+    # Index derivation  (identical logic to FORS baseline)
     # ------------------------------------------------------------------
 
     def _msg_to_indices(self, msg: bytes) -> list:
         """
         Derive k leaf indices (each in [0, t)) from *msg*.
 
-        The message digest is extended by chaining hashes until enough
-        bits are available, then k consecutive a-bit windows are extracted.
+        Uses the same algorithm as the baseline FORS so that signatures
+        produced by either class can be verified by either class.
         """
         needed_bits = self.k * self.a
         hash_bytes  = H(msg)
@@ -97,65 +101,48 @@ class FORS:
         return indices
 
     # ------------------------------------------------------------------
-    # Sign
+    # Sign  (cache lookup – no tree traversal)
     # ------------------------------------------------------------------
 
     def sign(self, msg: bytes, private_key: dict) -> dict:
         """
-        Sign *msg* using the FORS private key.
+        Sign *msg* using precomputed authentication paths.
 
         Returns
         -------
         dict with keys:
-          'indices'    – list[int]          selected leaf index per tree
-          'sk_values'  – list[bytes]        revealed secret value per tree
-          'auth_paths' – list[list[bytes]]  Merkle auth path per tree
+          'indices'    – list[int]
+          'sk_values'  – list[bytes]
+          'auth_paths' – list[list[bytes]]  (retrieved from cache)
         """
-        sk, trees   = private_key["sk"], private_key["trees"]
-        indices     = self._msg_to_indices(msg)
-        sk_values, auth_paths = [], []
+        sk              = private_key["sk"]
+        auth_path_cache = private_key["auth_path_cache"]
+        indices         = self._msg_to_indices(msg)
 
+        sk_values, auth_paths = [], []
         for i in range(self.k):
             idx = indices[i]
             sk_values.append(sk[i][idx])
-            auth_paths.append(trees[i].auth_path(idx))
+            auth_paths.append(auth_path_cache[i][idx])   # O(1) lookup
 
         return {"indices": indices, "sk_values": sk_values, "auth_paths": auth_paths}
 
     # ------------------------------------------------------------------
-    # Public-key reconstruction (helper used by sphincs.py)
+    # Verify  (same as baseline – cache not needed for verification)
     # ------------------------------------------------------------------
 
-    def reconstruct_pk(self, signature: dict) -> bytes:
-        """
-        Reconstruct the FORS public key from a signature.
-
-        Reconstructs each tree root via Merkle path traversal, then
-        returns H(root_0 || … || root_{k-1}).
-        """
-        indices    = signature["indices"]
-        sk_values  = signature["sk_values"]
-        auth_paths = signature["auth_paths"]
+    def verify(self, msg: bytes, signature: dict, pk: bytes) -> bool:
+        """Verify a FORSCached signature against *pk*."""
+        expected = self._msg_to_indices(msg)
+        if signature["indices"] != expected:
+            return False
 
         helper = MerkleTree()
         roots  = []
         for i in range(self.k):
-            leaf = H(sk_values[i])
-            root = helper.compute_root(leaf, auth_paths[i], indices[i])
+            idx  = signature["indices"][i]
+            leaf = H(signature["sk_values"][i])
+            root = helper.compute_root(leaf, signature["auth_paths"][i], idx)
             roots.append(root)
-        return H(b''.join(roots))
 
-    # ------------------------------------------------------------------
-    # Verify
-    # ------------------------------------------------------------------
-
-    def verify(self, msg: bytes, signature: dict, pk: bytes) -> bool:
-        """
-        Verify a FORS signature against *pk*.
-
-        Returns True iff the signature is valid.
-        """
-        expected = self._msg_to_indices(msg)
-        if signature["indices"] != expected:
-            return False
-        return self.reconstruct_pk(signature) == pk
+        return H(b''.join(roots)) == pk
