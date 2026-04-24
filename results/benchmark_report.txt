@@ -1,0 +1,130 @@
+SPHINCS+ Benchmark Report
+Generated: 2026-04-23 03:12:27
+
+============================================================
+WOTS+ Benchmarks
+============================================================
+
+  [WOTS+ w=4  length=133]
+  keygen                                   avg    0.917 ms  min   0.843 ms  max   1.006 ms
+  sign (cached)                            avg    0.027 ms  min   0.023 ms  max   0.062 ms
+  verify                                   avg    0.163 ms  min   0.153 ms  max   0.195 ms
+  sign (baseline, no cache)                avg    0.133 ms  min   0.121 ms  max   0.160 ms
+  cache speedup                            4.92x
+
+  [WOTS+ w=16  length=67]
+  keygen                                   avg    0.864 ms  min   0.753 ms  max   1.366 ms
+  sign (cached)                            avg    0.016 ms  min   0.014 ms  max   0.031 ms
+  verify                                   avg    2.072 ms  min   0.275 ms  max  34.727 ms
+  sign (baseline, no cache)                avg    0.216 ms  min   0.202 ms  max   0.253 ms
+  cache speedup                            13.79x
+
+  [WOTS+ w=256  length=34]
+  keygen                                   avg    4.678 ms  min   3.895 ms  max  10.484 ms
+  sign (cached)                            avg    0.012 ms  min   0.010 ms  max   0.036 ms
+  verify                                   avg    1.846 ms  min   1.733 ms  max   1.930 ms
+  sign (baseline, no cache)                avg    1.830 ms  min   1.769 ms  max   2.052 ms
+  cache speedup                            152.61x
+
+============================================================
+FORS Benchmarks
+============================================================
+
+  [FORS k=6, a=4, t=16]
+    baseline
+    keygen                                 avg    1.144 ms  min   0.531 ms  max  11.986 ms
+    sign                                   avg    0.007 ms  min   0.006 ms  max   0.019 ms
+    verify                                 avg    0.020 ms  min   0.019 ms  max   0.030 ms
+    cached  
+    keygen                                 avg    0.655 ms  min   0.609 ms  max   0.842 ms
+    sign                                   avg    0.002 ms  min   0.002 ms  max   0.008 ms
+    verify                                 avg    0.020 ms  min   0.019 ms  max   0.027 ms
+    sign speedup (cached vs baseline): 3.52x
+
+  [FORS k=10, a=6, t=64]
+    baseline
+    keygen                                 avg    6.014 ms  min   3.453 ms  max  50.115 ms
+    sign                                   avg    0.016 ms  min   0.014 ms  max   0.032 ms
+    verify                                 avg    0.043 ms  min   0.041 ms  max   0.050 ms
+    cached  
+    keygen                                 avg    8.796 ms  min   4.232 ms  max  51.706 ms
+    sign                                   avg    0.003 ms  min   0.002 ms  max   0.012 ms
+    verify                                 avg    0.045 ms  min   0.042 ms  max   0.064 ms
+    sign speedup (cached vs baseline): 4.93x
+
+  [FORS k=14, a=8, t=256]
+    baseline
+    keygen                                 avg   38.930 ms  min  19.873 ms  max  68.102 ms
+    sign                                   avg    0.049 ms  min   0.038 ms  max   0.187 ms
+    verify                                 avg    0.083 ms  min   0.072 ms  max   0.123 ms
+    cached  
+    keygen                                 avg   46.901 ms  min  28.192 ms  max  71.073 ms
+    sign                                   avg    0.004 ms  min   0.003 ms  max   0.018 ms
+    verify                                 avg    0.076 ms  min   0.073 ms  max   0.115 ms
+    sign speedup (cached vs baseline): 11.96x
+
+============================================================
+Merkle Tree Benchmarks
+============================================================
+
+  [n_leaves=8]
+    baseline
+    build                                  avg    0.006 ms  min   0.005 ms  max   0.008 ms
+    auth_path(0)                           avg    0.001 ms  min   0.001 ms  max   0.003 ms
+    cached
+    build                                  avg    0.009 ms  min   0.006 ms  max   0.015 ms
+    auth_path(0)                           avg    0.001 ms  min   0.001 ms  max   0.005 ms
+    auth_path speedup (cached vs baseline, n=8): 1.12x
+
+  [n_leaves=64]
+    baseline
+    build                                  avg    0.037 ms  min   0.034 ms  max   0.053 ms
+    auth_path(0)                           avg    0.001 ms  min   0.001 ms  max   0.002 ms
+    cached
+    build                                  avg    0.046 ms  min   0.044 ms  max   0.053 ms
+    auth_path(0)                           avg    0.001 ms  min   0.001 ms  max   0.003 ms
+    auth_path speedup (cached vs baseline, n=64): 1.00x
+
+  [n_leaves=512]
+    baseline
+    build                                  avg    0.279 ms  min   0.263 ms  max   0.304 ms
+    auth_path(0)                           avg    0.005 ms  min   0.004 ms  max   0.007 ms
+    cached
+    build                                  avg    0.369 ms  min   0.353 ms  max   0.410 ms
+    auth_path(0)                           avg    0.002 ms  min   0.001 ms  max   0.004 ms
+    auth_path speedup (cached vs baseline, n=512): 3.28x
+
+  [n_leaves=1024]
+    baseline
+    build                                  avg    2.055 ms  min   0.526 ms  max  30.247 ms
+    auth_path(0)                           avg    0.009 ms  min   0.008 ms  max   0.017 ms
+    cached
+    build                                  avg    0.789 ms  min   0.741 ms  max   1.176 ms
+    auth_path(0)                           avg    0.002 ms  min   0.001 ms  max   0.007 ms
+    auth_path speedup (cached vs baseline, n=1024): 5.42x
+
+============================================================
+Full SPHINCS+ End-to-End Benchmarks
+============================================================
+
+  [Small   num_leaves=4  k=6  a=4]
+  keygen                                   avg    3.888 ms  min   3.847 ms  max   3.941 ms
+  sign                                     avg    0.045 ms  min   0.041 ms  max   0.069 ms
+  verify                                   avg    0.304 ms  min   0.289 ms  max   0.344 ms
+  Public key size                          64 bytes
+  Signature size                           3168 bytes  (FORS=960  WOTS=2144  auth=64)
+
+  [Medium  num_leaves=8  k=10  a=6]
+  keygen                                   avg   15.715 ms  min  10.038 ms  max  37.543 ms
+  sign                                     avg    0.081 ms  min   0.072 ms  max   0.127 ms
+  verify                                   avg    0.353 ms  min   0.329 ms  max   0.460 ms
+  Public key size                          64 bytes
+  Signature size                           4480 bytes  (FORS=2240  WOTS=2144  auth=96)
+
+  [Large   num_leaves=16  k=14  a=8]
+  keygen                                   avg   60.114 ms  min  33.733 ms  max  81.839 ms
+  sign                                     avg    0.150 ms  min   0.130 ms  max   0.237 ms
+  verify                                   avg    0.411 ms  min   0.384 ms  max   0.496 ms
+  Public key size                          64 bytes
+  Signature size                           6304 bytes  (FORS=4032  WOTS=2144  auth=128)
+
